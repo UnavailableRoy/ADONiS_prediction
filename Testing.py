@@ -17,13 +17,13 @@ class testing(object):
         self.train_object = train_object
         
     # firing strengths of each input to each antecedent     
-    def generate_firing_strengths(self, advaced_NSFLSs, my_technique, noise_est_past_points):
+    def generate_firing_strengths(self, advaced_NSFLSs, my_technique, nf_sigma, noise_est_past_points):
         
         self.past_point_firing_strengts = np.empty([self.train_object.p, len(self.train_object.antecedents)])
         self.past_point_firing_strengts.fill(np.NaN)
 
         #Defining non-adaptive sigma values
-        sigmas=[0.0,0.0286982683,0.0907518928,0.2869826834]
+        sigmas = [0.0, nf_sigma/10, nf_sigma/(10**0.5), nf_sigma]
 
         #Non-Adaptive manually adjusting the sigma value of the input MFs
         if(my_technique=="singleton"):
@@ -40,7 +40,7 @@ class testing(object):
             #Using the proposed ADONiS to adapt sigma value of the input MFs
             if(my_technique=="ADONiS"):
                 sigma_of_input=self.get_input_sigma_value(index,noise_est_past_points)
-            print("input_val",input_val)
+            print("Input" , index+1 ,":",input_val)
             #create input objects
             input_obj = T1_Gaussian(input_val, sigma_of_input, 500)   
                       
@@ -54,8 +54,9 @@ class testing(object):
                     fs = inter_un_obj.return_FSSSS(advaced_NSFLSs)  
                 temp_firings.append(fs)
             self.past_point_firing_strengts[index] = temp_firings   
+            
+            
     # adaptive sigmas for every antecedent's input
-    # 9 is number of past points
     def get_input_sigma_value(self, index_no, noise_est_past_points):
         return(self.noise_estimation(self.test_data[ len(self.test_data)-self.train_object.p + index_no + 1 - noise_est_past_points : \
                                                      len(self.test_data)-self.train_object.p + index_no + 1]))    
@@ -87,11 +88,11 @@ class testing(object):
             print("Rule" , index + 1 , end = "")
             for index,i in enumerate(working_rules_matrix[index]):
                 if index == 0:
-                    print("strength:",i)
+                    print(" strength:",round(i,3))
                 elif index <= self.train_object.p + 1:
                     print(int(i),end=" , ")
                 else :
-                    print(i)
+                    print(round(i,5))
                     
         # calculate the centroid of the united outputs
         centroid = self.generate_outputs_object(firing_level_for_each_output)
@@ -107,7 +108,7 @@ class testing(object):
                 
         l1 = grouped_output_antecedent_strength.groupby([2]).max()
         l1 = pd.DataFrame.dropna(l1)
-        print(l1)
+
         return(list(zip(l1.index, l1[1], l1[3])))        
             
             
